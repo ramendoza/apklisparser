@@ -1720,7 +1720,10 @@ class ARSCResTableEntry(object):
         return self.parent.mKeyStrings.getString(self.index)
 
     def get_key_data(self):
-        return self.key.get_data_value()
+        try:
+            return self.key.get_data_value()
+        except:
+            return None
 
     def is_util(self):
         return (self.flags & self.FLAG.util) != 0
