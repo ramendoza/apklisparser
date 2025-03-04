@@ -377,7 +377,7 @@ class APK(object):
 
     def get_part(self, tree, key):
         element = tree.find(key)
-        if len(element.values()) == 0:
+        if element and len(element.values()) == 0:
             element = element.find('inset')
 
         return element
@@ -392,14 +392,15 @@ class APK(object):
         if icon.endswith(".xml"):
             icon_element = AXMLPrinter(self.get_file(icon)).get_xml_obj()
             if icon_element.tag in ('adaptative-icon', 'adaptive-icon'):
-                parts = [
-                    (self.get_part(icon_element, 'background').values())[0].replace(
-                        "android:", ""
-                    ),
-                    (self.get_part(icon_element, 'foreground').values())[0].replace(
-                        "android:", ""
-                    ),
-                ]
+                parts = []
+                background = self.get_part(icon_element, 'background')
+                if background:
+                    parts.append(list(background.values())[0].replace("android:", ""))
+                foreground = self.get_part(icon_element, 'foreground')
+                if foreground:
+                    parts.append(list(foreground.values())[0].replace("android:", ""))
+                else:
+                    parts.append(list(background.values())[0].replace("android:", ""))
             else:
                 # should be a bitmap
                 parts = [icon_element.attrib.values()[0]]
