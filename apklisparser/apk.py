@@ -408,7 +408,6 @@ class APK(object):
             else:
                 # should be a bitmap
                 parts = [icon_element.attrib.values()[0]]
-            print(parts)
             parts = [
                 self._resolve_icon_resource(p[1:], max_dpi) if p.startswith("@") else p
                 for p in parts
