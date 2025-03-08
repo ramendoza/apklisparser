@@ -393,17 +393,22 @@ class APK(object):
             icon_element = AXMLPrinter(self.get_file(icon)).get_xml_obj()
             if icon_element.tag in ('adaptative-icon', 'adaptive-icon'):
                 parts = []
-                background = self.get_part(icon_element, 'background')
-                if background:
-                    parts.append(list(background.values())[0].replace("android:", ""))
-                foreground = self.get_part(icon_element, 'foreground')
-                if foreground:
-                    parts.append(list(foreground.values())[0].replace("android:", ""))
-                else:
-                    parts.append(list(background.values())[0].replace("android:", ""))
+                try:
+                    parts.append((self.get_part(icon_element, 'background').values())[0].replace(
+                        "android:", ""
+                    ))
+                except:
+                    pass
+                try:
+                    parts.append((self.get_part(icon_element, 'foreground').values())[0].replace(
+                        "android:", ""
+                    ))
+                except:
+                    pass
             else:
                 # should be a bitmap
                 parts = [icon_element.attrib.values()[0]]
+            print(parts)
             parts = [
                 self._resolve_icon_resource(p[1:], max_dpi) if p.startswith("@") else p
                 for p in parts
@@ -588,7 +593,7 @@ class APK(object):
         """
             Return the name of all classes dex files
 
-            :rtype: a list of string 
+            :rtype: a list of string
         """
         dexre = re.compile(r"classes(\d*).dex")
         return filter(lambda x: dexre.match(x), self.get_files())
