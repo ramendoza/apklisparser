@@ -1,3 +1,5 @@
+import logging
+
 from androguard.core.apk import APK
 from androguard.core.axml import AXMLPrinter
 
@@ -67,5 +69,5 @@ class APK(APK):
                     res = file_name
                     current_dpi = dpi
         except Exception as e:
-            print("Exception selecting application res: %s" % e)
+            logging.error("Exception selecting application res: %s" % e)
         return res

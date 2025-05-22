@@ -208,7 +208,6 @@ class Vd2PngConverter:
 
     def vd2png(self, input, output, scale):
         svg = self.vd2svg(input)
-        print(svg)
         with wand.image.Image() as image:
             with wand.color.Color('transparent') as background_color:
                 library.MagickSetBackgroundColor(image.wand, background_color.resource)
