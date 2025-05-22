@@ -8,5 +8,5 @@ apks = Path(__file__).parent.glob('*.apk')
 @pytest.mark.parametrize('apk_file', apks)
 def test_apk(apk_file):
     apk = APK(apk_file)
-    print(apk.get_name())
+    # print(apk.get_name())
     apk.extract_icon(apk_file.with_suffix('.png'))

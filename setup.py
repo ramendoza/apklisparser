@@ -13,6 +13,6 @@ setup(
     url="https://github.com/ramendoza/apklisparser",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=["pyasn1", "cryptography", "lxml", "Pillow", "wand"],
+    install_requires=["androguard","wand"],
     python_requires='>=3.6',
 )

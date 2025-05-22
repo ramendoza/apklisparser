@@ -1,22 +1,25 @@
 from math import cos, radians, sin
 from string import ascii_lowercase
 
+from androguard.core.axml import AXMLPrinter
 from lxml import etree
 from lxml.builder import E
 from wand.api import library
 import wand.color
 import wand.image
+
 try:
     from random import choices
 except Exception:
     from random import choice
+
 
     def choices(population, k=1, *args, **kwargs):
         return [choice(population) for _ in range(k)]
 
 
 def repl_attr_name(
-    el, old_attr, new_attr=None, value_transform=lambda x: x, default=None
+        el, old_attr, new_attr=None, value_transform=lambda x: x, default=None
 ):
     v = el.attrib.pop(old_attr, None)
     if v is not None:
@@ -45,7 +48,7 @@ class Vd2PngConverter:
 
         svg = el.getroottree().getroot()
         defs = (
-            svg.find("defs") or svg.append(E.defs()) or svg.find("defs")
+                svg.find("defs") or svg.append(E.defs()) or svg.find("defs")
         )  # elements does not have setdefault :'(
         types = ["linearGradient", "radialGradient", "sweepGradient"]
         # SweepGradient does not exist on svg but it will be here as a reminder that I need to
@@ -126,6 +129,20 @@ class Vd2PngConverter:
             fill = rgb
             el.attrib["fill"] = fill
 
+    def get_resource_as_xml(self, id_, which=lambda x: x[0]):
+        res_parser = self._apk.get_android_resources()
+
+        if isinstance(id_, str):
+            id_ = int(id_.replace('@', ''), 16)
+        candidates = res_parser.get_resolved_res_configs(id_)
+        conf, name = which(candidates)
+        if name not in self._apk.xml:
+            try:
+                self._apk.xml[name] = AXMLPrinter(self._apk.get_file(name)).get_xml_obj()
+            except:
+                self._apk.xml[name] = name
+        return self._apk.xml[name]
+
     def conv_path(self, el):
         repl_attr_name(el, "pathData", "d")
         repl_attr_name(el, "strokeWidth", "stroke-width")
@@ -142,9 +159,15 @@ class Vd2PngConverter:
                 fill = rgb
                 el.attrib["fill"] = fill
             elif fill.startswith("@"):
-                res = self._apk.get_resource_as_xml(fill)
-                el.append(res)
-                self.transform(res)
+                res = self.get_resource_as_xml(fill)
+                if type(res) is str and res.startswith("#"):
+                    a, rgb = self.split_argb(res)
+                    el.attrib["fill-opacity"] = str(a)
+                    fill = rgb
+                    el.attrib["fill"] = fill
+                else:
+                    el.append(res)
+                    self.transform(res)
 
             else:
                 raise ValueError("Unexpected fill value {}".format(fill))
@@ -152,14 +175,6 @@ class Vd2PngConverter:
         repl_attr_name(el, "fillAlpha", "fill-opacity")
         repl_attr_name(el, "strokeAlpha", "stroke-opacity")
         repl_attr_name(el, "fillType", "fill-rule", lambda x: x.lower())
-        # missing translation
-        # android:trimPathStart
-        #     The fraction of the path to trim from the start, in the range from 0
-        #  to 1. Default is 0.
-        # android:trimPathEnd
-        #     The fraction of the path to trim from the end, in the range from 0
-        #  to 1. Default is 1.
-        # android:trimPathOffset
 
     def transform(self, el):
         for a, v in el.items():
@@ -193,6 +208,7 @@ class Vd2PngConverter:
 
     def vd2png(self, input, output, scale):
         svg = self.vd2svg(input)
+        print(svg)
         with wand.image.Image() as image:
             with wand.color.Color('transparent') as background_color:
                 library.MagickSetBackgroundColor(image.wand, background_color.resource)

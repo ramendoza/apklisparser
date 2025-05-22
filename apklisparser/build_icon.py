@@ -1,7 +1,8 @@
+from androguard.core.axml import AXMLPrinter
+
 from .vd2png import Vd2PngConverter
 from PIL import Image
 from io import BytesIO
-from .axml import AXMLPrinter
 
 
 def layer_from_color(color):
@@ -17,16 +18,29 @@ def layer_from_color(color):
 
 
 def _axml2png(axml, apk):
-    out = BytesIO()
-    converter = Vd2PngConverter(apk)
-    converter.vd2png(
-        BytesIO(AXMLPrinter(axml).get_xml()), out, 10
-    )  # scale to 10x for getting a hight quality icon
-    return out
+    icon_element = AXMLPrinter(axml).get_xml_obj()
+    if icon_element.tag == 'layer-list':
+        parts = []
+        for item in icon_element.findall(".//item"):
+            parts.append(list(item.values())[0])
+        parts = [
+            apk._resolve_icon_resource(p[1:], 65536) if p.startswith("@") else p
+            for p in parts
+        ]
+        parts = [p for p in parts if p]
+        parts = [(p, None if p.startswith("#") else apk.get_file(p)) for p in parts]
+        img = build_icon(apk, parts)
+        img_byte_arr = BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        return img_byte_arr
+    else:
+        out = BytesIO()
+        converter = Vd2PngConverter(apk)
+        converter.vd2png(BytesIO(AXMLPrinter(axml).get_xml()), out, 10)
+        return out
 
 
-def build_icon(apk, parts, output_path: str):
-
+def build_icon(apk, parts):
     layers = [
         layer_from_color(name)
         if name.startswith("#")
@@ -45,4 +59,4 @@ def build_icon(apk, parts, output_path: str):
         min_size = min(layers, key=lambda x: x.size).size
         layers = [l if l.size == min_size else l.resize(min_size) for l in layers]
         icon = Image.alpha_composite(*layers)
-    icon.save(output_path)
+    return icon
