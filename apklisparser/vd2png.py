@@ -113,9 +113,14 @@ class Vd2PngConverter:
         translate_x = attr.pop("translateX", 0)
         translate_y = attr.pop("translateY", 0)
 
-        # scale, rotate then translate.
-        attr["transform"] = "scale({} {}) rotate({} {} {}) translate({} {})".format(
-            scale_x, scale_y, rotation, pivot_x, pivot_y, translate_x, translate_y
+        # Android: move pivot to origin, scale, rotate, move back + translate.
+        # SVG applies the list right-to-left, so write it in reverse.
+        px, py = float(pivot_x), float(pivot_y)
+        attr["transform"] = (
+            "translate({} {}) rotate({}) scale({} {}) translate({} {})".format(
+                px + float(translate_x), py + float(translate_y),
+                rotation, scale_x, scale_y, -px, -py,
+            )
         )
 
     def conv_solid(self, el):
@@ -147,12 +152,17 @@ class Vd2PngConverter:
         repl_attr_name(el, "pathData", "d")
         repl_attr_name(el, "strokeWidth", "stroke-width")
         repl_attr_name(el, "strokeColor", "stroke")
-        repl_attr_name(el, "strokeLinecap", "stroke-linecap")
-        repl_attr_name(el, "strokeLineJoin", "stroke-line-join")
-        repl_attr_name(el, "strokeMiterLimit", "stroke-miter-limit")
+        # compiled XML stores caps/joins as enum ints
+        caps = {"0": "butt", "1": "round", "2": "square"}
+        joins = {"0": "miter", "1": "round", "2": "bevel"}
+        repl_attr_name(el, "strokeLineCap", "stroke-linecap", lambda x: caps.get(x, x))
+        repl_attr_name(el, "strokeLineJoin", "stroke-linejoin", lambda x: joins.get(x, x))
+        repl_attr_name(el, "strokeMiterLimit", "stroke-miterlimit")
 
         fill = el.attrib.pop("fillColor", None)
-        if fill:
+        if not fill:
+            el.attrib["fill"] = "none"  # Android default; SVG's would be black
+        else:
             if fill.startswith("#"):
                 a, rgb = self.split_argb(fill)
                 el.attrib["fill-opacity"] = str(a)
