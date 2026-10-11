@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="apklisparser",
-    version="1.1.0",
+    version="1.1.1",
     packages=["apklisparser"],
     author="Rafael Mendoza",
     author_email="ralexm14@gmail.com",
@@ -13,6 +13,6 @@ setup(
     url="https://github.com/ramendoza/apklisparser",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=["androguard","wand"],
+    install_requires=["androguard","wand","pillow"],
     python_requires='>=3.9',
 )
