@@ -22,7 +22,12 @@ def _axml2png(axml, apk):
     if icon_element.tag == 'layer-list':
         parts = []
         for item in icon_element.findall(".//item"):
-            parts.append(list(item.values())[0])
+            if item.attrib:
+                parts.append(list(item.values())[0])
+            else:  # ponytail: only <shape><solid color>, corners ignored
+                solid = item.find(".//solid")
+                if solid is not None and solid.attrib:
+                    parts.append(list(solid.values())[0])
         parts = [
             apk._resolve_icon_resource(p[1:], 65536) if p.startswith("@") else p
             for p in parts

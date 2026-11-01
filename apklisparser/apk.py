@@ -31,6 +31,8 @@ class APK(APK):
                         parts.append(list(fg.values())[0].replace("android:", ""))
                 except:
                     pass
+            elif icon_element.tag == 'layer-list':
+                parts = [icon]  # build_icon -> _axml2png handles layer-list
             else:
                 parts = [list(icon_element.attrib.values())[0]]
 
